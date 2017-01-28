@@ -1,0 +1,27 @@
+{
+  "name": "notify-server",
+  "version": "1.0.0",
+  "description": "Get mobile notifications on desktop",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ItsJimi/Notify-server.git"
+  },
+  "keywords": [
+    "notify",
+    "notification"
+  ],
+  "author": "Jimi M",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ItsJimi/Notify-server/issues"
+  },
+  "homepage": "https://github.com/ItsJimi/Notify-server#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "ws": "^1.1.1"
+  }
+}
