@@ -10,7 +10,9 @@ const port = 5000
 app.use(bodyParser.json())
 
 wss.on('connection', (ws) => {
-  ws.send('something')
+  ws.send(JSON.stringify({
+    message: 'Hello'
+  }))
 })
 
 app.get('/', (req, res) => {
@@ -22,6 +24,18 @@ app.get('/', (req, res) => {
 })
 
 app.post('/notify', (req, res) => {
+  if (!req.body.title || req.body.title === '' || !req.body.text || req.body.text === '') {
+    return res.json({
+      success: false,
+      message: 'Fields empty'
+    })
+  }
+  wss.clients.forEach((ws) => {
+    ws.send(JSON.stringify({
+      title: req.body.title,
+      text: req.body.text
+    }))
+  })
   res.json({
     success: true,
     message: 'Sent!'
