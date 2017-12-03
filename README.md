@@ -10,7 +10,7 @@ go get github.com/gorilla/websocket
 ```shell
 go run main.go
 ```
-## Build
+### Build
 ```shell
 go build main.go
 ```
