@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -57,10 +56,8 @@ func handleNotifications() {
 }
 
 func sendNotif(c *gin.Context) {
-	body, _ := c.GetRawData()
-
 	var notif Notification
-	json.Unmarshal(body, &notif)
+	c.BindJSON(&notif)
 	broadcast <- notif
 }
 
