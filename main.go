@@ -4,43 +4,76 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/rs/cors"
 )
 
-var upgrader = websocket.Upgrader{}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/version", header)
-	mux.HandleFunc("/", http.NotFound)
-	s := &http.Server{
-		Addr:           ":3000",
-		Handler:        cors.Default().Handler(mux),
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
-	s.ListenAndServe()
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan Notification)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
-func header(w http.ResponseWriter, r *http.Request) {
-	jsonResp := struct {
-		Version string `json:"version"`
-		Info    string `json:"info"`
-	}{
-		"1.0.0",
-		"Welcome on NotifyApp server",
-	}
+// Notification is the notifs channel
+type Notification struct {
+	Title   string `json:"title"`
+	Message string `json:"message"`
+}
 
-	resp, err := json.Marshal(jsonResp)
+func handleConnections(c *gin.Context) {
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Fatal("Error marshal json")
+		log.Fatal(err)
 	}
-	w.Header().Set("Server", "Notify")
-	w.Header().Set("Content-type", "text/json")
-	w.WriteHeader(200)
-	w.Write(resp)
+	defer ws.Close()
+	clients[ws] = true
+	for {
+		// var notif Notification
+		// err := ws.ReadJSON(&notif)
+		// if err != nil {
+		// 	log.Printf("error: %v", err)
+		// 	delete(clients, ws)
+		// 	break
+		// }
+		// broadcast <- notif
+	}
+}
+
+func handleNotifications() {
+	for {
+		notif := <-broadcast
+		for client := range clients {
+			err := client.WriteJSON(notif)
+			if err != nil {
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
+}
+
+func sendNotif(c *gin.Context) {
+	body, _ := c.GetRawData()
+
+	var notif Notification
+	json.Unmarshal(body, &notif)
+	broadcast <- notif
+}
+
+func main() {
+	r := gin.Default()
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "NotifyApp API",
+			"version": "1.0.0",
+		})
+	})
+	r.POST("/notifs", sendNotif)
+	r.GET("/ws", handleConnections)
+	go handleNotifications()
+	r.Run()
 }
