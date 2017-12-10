@@ -4,7 +4,7 @@ Get mobile notifications on desktop
 Golang websocket implementation by gorilla
 ```shell
 go get github.com/gorilla/websocket
-go get github.com/rs/cors
+go get github.com/gin-gonic/gin
 ```
 ## How to
 ### Run
