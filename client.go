@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -45,6 +46,7 @@ func (c *client) read() {
 		return nil
 	})
 	for {
+		var notif Notification
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
@@ -53,7 +55,10 @@ func (c *client) read() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, []byte{'\n'}, []byte{' '}, -1))
-		c.hub.broadcast <- message
+		dec := json.NewDecoder(bytes.NewReader(message))
+		dec.Decode(&notif)
+		// Action with notif or check
+		c.hub.broadcast <- notif.ToBytes()
 	}
 }
 

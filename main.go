@@ -16,16 +16,10 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-// Notification is the notifs channel
-type Notification struct {
-	Title   string `json:"title"`
-	Message string `json:"message"`
-}
-
 func handleConnections(h *hub, c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 		return
 	}
 	client := &client{hub: h, conn: conn, send: make(chan []byte, 256)}
