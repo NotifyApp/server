@@ -8,69 +8,39 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Notification)
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
-// Notification is the notifs channel
-type Notification struct {
-	Title   string `json:"title"`
-	Message string `json:"message"`
-}
-
-func handleConnections(c *gin.Context) {
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+func handleConnections(h *hub, c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
-	defer ws.Close()
-	clients[ws] = true
-	for {
-		// var notif Notification
-		// err := ws.ReadJSON(&notif)
-		// if err != nil {
-		// 	log.Printf("error: %v", err)
-		// 	delete(clients, ws)
-		// 	break
-		// }
-		// broadcast <- notif
-	}
-}
+	client := &client{hub: h, conn: conn, send: make(chan []byte, 256)}
+	client.hub.register <- client
 
-func handleNotifications() {
-	for {
-		notif := <-broadcast
-		for client := range clients {
-			err := client.WriteJSON(notif)
-			if err != nil {
-				log.Printf("error: %v", err)
-				client.Close()
-				delete(clients, client)
-			}
-		}
-	}
-}
-
-func sendNotif(c *gin.Context) {
-	var notif Notification
-	c.BindJSON(&notif)
-	broadcast <- notif
+	go client.write()
+	go client.read()
 }
 
 func main() {
 	r := gin.Default()
+	hub := newHub()
+	go hub.run()
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "NotifyApp API",
 			"version": "1.0.0",
 		})
 	})
-	r.POST("/notifs", sendNotif)
-	r.GET("/ws", handleConnections)
-	go handleNotifications()
+	r.GET("/ws", func(c *gin.Context) {
+		handleConnections(hub, c)
+	})
 	r.Run()
 }
