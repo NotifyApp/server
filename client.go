@@ -57,7 +57,6 @@ func (c *client) read() {
 		message = bytes.TrimSpace(bytes.Replace(message, []byte{'\n'}, []byte{' '}, -1))
 		dec := json.NewDecoder(bytes.NewReader(message))
 		dec.Decode(&notif)
-		// Action with notif or check
 		c.hub.broadcast <- notif.ToBytes()
 	}
 }

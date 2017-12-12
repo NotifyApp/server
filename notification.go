@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"log"
 )
 
 // Notification is the notifs channel
@@ -13,17 +13,13 @@ type Notification struct {
 
 // ToBytes convert struct to byte array
 func (n Notification) ToBytes() []byte {
-	b, err := json.Marshal(&n)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return b
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(n)
+	return buffer.Bytes()
 }
 
 func (n Notification) String() string {
-	b, err := json.Marshal(&n)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return string(b[:])
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(n)
+	return string(buffer.Bytes())
 }
